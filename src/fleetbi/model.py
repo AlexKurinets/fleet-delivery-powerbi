@@ -146,17 +146,20 @@ def best_practice_violations(bim: dict) -> list[str]:
 def data_dictionary(bim: dict) -> str:
     """Markdown data dictionary generated from the model, committed as docs/data-dictionary.md."""
     m = bim["model"]
+    # TOM reads the tables and roles folders in file system order, which differs between Windows and
+    # Linux; sort everything so the generated file is identical on both.
+    ordered = sorted(tables(bim), key=lambda t: t["name"])
     lines = ["# Data dictionary", "",
              "Generated from the semantic model by `fleetbi model docs` (from `build/model.bim`, which "
              "`tools/TmdlCheck` compiles from the TMDL). Do not edit by hand; CI fails if it is out of date.", ""]
     lines += ["## Tables", "", "| Table | Source | Description |", "| --- | --- | --- |"]
-    for t in tables(bim):
+    for t in ordered:
         src = partition_source(t)
         where = f"`{src[0]}.{src[1]}`" if src else "calculation group"
         hidden = " (hidden)" if t.get("isHidden") else ""
         lines.append(f"| {t['name']}{hidden} | {where} | {t.get('description', '')} |")
     lines.append("")
-    for t in tables(bim):
+    for t in ordered:
         lines += [f"## {t['name']}", "", t.get("description", ""), ""]
         rp = t.get("refreshPolicy")
         if rp:
@@ -185,10 +188,10 @@ def data_dictionary(bim: dict) -> str:
         lines.append("")
     lines += ["## Relationships", "", "All many-to-one, single direction, active.", "",
               "| From | To |", "| --- | --- |"]
-    for r in m.get("relationships", []):
+    for r in sorted(m.get("relationships", []), key=lambda r: (r["fromTable"], r["fromColumn"])):
         lines.append(f"| {r['fromTable']}[{r['fromColumn']}] | {r['toTable']}[{r['toColumn']}] |")
     lines += ["", "## Roles", ""]
-    for r in m.get("roles", []):
+    for r in sorted(m.get("roles", []), key=lambda r: r["name"]):
         lines += [f"### {r['name']}", "", r.get("description", ""), ""]
         for p in r.get("tablePermissions", []):
             lines.append(f"- {p['name']}: `{' '.join(_expr(p.get('filterExpression')).split())}`")
@@ -196,7 +199,7 @@ def data_dictionary(bim: dict) -> str:
             lines.append("- No row filters.")
         lines.append("")
     lines += ["## Parameters", "", "| Name | Default | Description |", "| --- | --- | --- |"]
-    for e in m.get("expressions", []):
+    for e in sorted(m.get("expressions", []), key=lambda e: e["name"]):
         default = _expr(e["expression"]).split(" meta ")[0]
         lines.append(f"| {e['name']} | `{default}` | {e.get('description', '')} |")
     return "\n".join(lines) + "\n"

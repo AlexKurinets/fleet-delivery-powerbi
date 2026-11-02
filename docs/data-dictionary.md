@@ -16,8 +16,8 @@ Generated from the semantic model by `fleetbi model docs` (from `build/model.bim
 | Invoice Line | `gold.fact_invoice_line` | One invoice or credit line, at its posting date. Incremental refresh: three years kept, last ten days refreshed. |
 | Pipeline Run | `rpt.pipeline_run` | Pipeline runs, their status and whether the model refresh was triggered. |
 | Product Category | `gold.dim_category` | Product category and its temperature zone. |
-| Route Trip | `gold.fact_route_trip` | One truck on one route and day, with telematics miles and driver hours. |
 | Route | `gold.dim_route` | Delivery route. Not related to Branch, so there is one filter path from Branch to each fact. |
+| Route Trip | `gold.fact_route_trip` | One truck on one route and day, with telematics miles and driver hours. |
 | Security Branch Access (hidden) | `sec.user_branch_access` | User to branch mapping for the Branch Manager role, maintained by IT. |
 | Time Calc | calculation group | Time intelligence applied to any measure: current, month to date, year to date, prior year, year over year. |
 | Truck | `gold.dim_truck` | Refrigerated truck. |
@@ -234,6 +234,17 @@ Product category and its temperature zone.
 | Category | string | `category_name` | yes |  |
 | Temperature Zone | string | `temp_zone` | yes |  |
 
+## Route
+
+Delivery route. Not related to Branch, so there is one filter path from Branch to each fact.
+
+| Column | Type | Source column | Visible | Description |
+| --- | --- | --- | --- | --- |
+| Route Key | int64 | `route_key` | no |  |
+| Route Code | string | `route_code` | yes |  |
+| Route | string | `route_name` | yes |  |
+| Route Branch | string | `route_branch` | yes |  |
+
 ## Route Trip
 
 One truck on one route and day, with telematics miles and driver hours.
@@ -264,17 +275,6 @@ One truck on one route and day, with telematics miles and driver hours.
 | Driven Miles | double | `driven_miles` | no |  |
 | Driver Hours | double | `driver_hours` | no |  |
 | Labor Cost | decimal | `labor_cost` | no |  |
-
-## Route
-
-Delivery route. Not related to Branch, so there is one filter path from Branch to each fact.
-
-| Column | Type | Source column | Visible | Description |
-| --- | --- | --- | --- | --- |
-| Route Key | int64 | `route_key` | no |  |
-| Route Code | string | `route_code` | yes |  |
-| Route | string | `route_name` | yes |  |
-| Route Branch | string | `route_branch` | yes |  |
 
 ## Security Branch Access
 
@@ -315,27 +315,27 @@ All many-to-one, single direction, active.
 
 | From | To |
 | --- | --- |
-| Delivery Stop[Service Date Key] | Date[Date Key] |
+| Data Quality[Branch Key] | Branch[Branch Key] |
+| Data Quality[Check Date Key] | Date[Date Key] |
 | Delivery Stop[Branch Key] | Branch[Branch Key] |
-| Delivery Stop[Route Key] | Route[Route Key] |
 | Delivery Stop[Customer Key] | Customer[Customer Key] |
 | Delivery Stop[Driver Key] | Driver[Driver Key] |
+| Delivery Stop[Route Key] | Route[Route Key] |
+| Delivery Stop[Service Date Key] | Date[Date Key] |
 | Delivery Stop[Truck Key] | Truck[Truck Key] |
-| Invoice Line[Posting Date Key] | Date[Date Key] |
-| Invoice Line[Branch Key] | Branch[Branch Key] |
-| Invoice Line[Customer Key] | Customer[Customer Key] |
-| Invoice Line[Category Key] | Product Category[Category Key] |
-| Invoice Line[Route Key] | Route[Route Key] |
-| Route Trip[Service Date Key] | Date[Date Key] |
-| Route Trip[Branch Key] | Branch[Branch Key] |
-| Route Trip[Route Key] | Route[Route Key] |
-| Route Trip[Truck Key] | Truck[Truck Key] |
-| Route Trip[Driver Key] | Driver[Driver Key] |
-| Fuel[Txn Date Key] | Date[Date Key] |
 | Fuel[Branch Key] | Branch[Branch Key] |
 | Fuel[Truck Key] | Truck[Truck Key] |
-| Data Quality[Check Date Key] | Date[Date Key] |
-| Data Quality[Branch Key] | Branch[Branch Key] |
+| Fuel[Txn Date Key] | Date[Date Key] |
+| Invoice Line[Branch Key] | Branch[Branch Key] |
+| Invoice Line[Category Key] | Product Category[Category Key] |
+| Invoice Line[Customer Key] | Customer[Customer Key] |
+| Invoice Line[Posting Date Key] | Date[Date Key] |
+| Invoice Line[Route Key] | Route[Route Key] |
+| Route Trip[Branch Key] | Branch[Branch Key] |
+| Route Trip[Driver Key] | Driver[Driver Key] |
+| Route Trip[Route Key] | Route[Route Key] |
+| Route Trip[Service Date Key] | Date[Date Key] |
+| Route Trip[Truck Key] | Truck[Truck Key] |
 
 ## Roles
 
@@ -357,7 +357,7 @@ directly, so no relationship has to filter in both directions.
 
 | Name | Default | Description |
 | --- | --- | --- |
-| SqlServer | `"localhost,14330"` | SQL Server or Fabric Warehouse SQL endpoint. Deployment rules set it per stage. |
-| SqlDatabase | `"fleetdw"` | Warehouse database name. |
-| RangeStart | `#datetime(2025, 10, 1, 0, 0, 0)` | Incremental refresh lower bound; the service replaces it per partition. |
 | RangeEnd | `#datetime(2027, 1, 1, 0, 0, 0)` | Incremental refresh upper bound; the service replaces it per partition. |
+| RangeStart | `#datetime(2025, 10, 1, 0, 0, 0)` | Incremental refresh lower bound; the service replaces it per partition. |
+| SqlDatabase | `"fleetdw"` | Warehouse database name. |
+| SqlServer | `"localhost,14330"` | SQL Server or Fabric Warehouse SQL endpoint. Deployment rules set it per stage. |
