@@ -1,0 +1,19 @@
+/// SQL Server or Fabric Warehouse SQL endpoint. Deployment rules set it per stage.
+expression SqlServer = "localhost,14330" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+
+	annotation PBI_ResultType = Text
+
+/// Warehouse database name.
+expression SqlDatabase = "fleetdw" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+
+	annotation PBI_ResultType = Text
+
+/// Incremental refresh lower bound; the service replaces it per partition.
+expression RangeStart = #datetime(2025, 10, 1, 0, 0, 0) meta [IsParameterQuery=true, Type="DateTime", IsParameterQueryRequired=true]
+
+	annotation PBI_ResultType = DateTime
+
+/// Incremental refresh upper bound; the service replaces it per partition.
+expression RangeEnd = #datetime(2027, 1, 1, 0, 0, 0) meta [IsParameterQuery=true, Type="DateTime", IsParameterQueryRequired=true]
+
+	annotation PBI_ResultType = DateTime

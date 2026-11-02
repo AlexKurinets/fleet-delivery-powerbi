@@ -1,0 +1,69 @@
+/// One fuel card transaction.
+table Fuel
+
+	/// Fuel card spend
+	measure 'Fuel Cost' = SUM ( Fuel[Fuel Cost] )
+		formatString: "$"#,0;("$"#,0);"$"#,0
+		displayFolder: Fleet
+
+	/// Gallons on fuel card transactions
+	measure Gallons = SUM ( Fuel[Gallons] )
+		formatString: #,0
+		displayFolder: Fleet
+
+	/// Driven miles per gallon
+	measure MPG = DIVIDE ( [Driven Miles], [Gallons] )
+		formatString: 0.0
+		displayFolder: Fleet
+
+	/// Fuel card transactions for a truck that was not on a route that day
+	measure 'Off-Route Fuel Transactions' = CALCULATE ( COUNTROWS ( Fuel ), Fuel[Is On Route Day] = 0 )
+		formatString: #,0
+		displayFolder: Data Health
+
+	column 'Txn Date Key'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: txn_date_key
+
+	column 'Branch Key'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: branch_key
+
+	column 'Truck Key'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: truck_key
+
+	column Gallons
+		dataType: double
+		isHidden
+		summarizeBy: none
+		sourceColumn: gallons
+
+	column 'Fuel Cost'
+		dataType: decimal
+		isHidden
+		formatString: "$"#,0;("$"#,0);"$"#,0
+		summarizeBy: none
+		sourceColumn: fuel_cost
+
+	column 'Is On Route Day'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: is_on_route_day
+
+	partition Fuel = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(SqlServer, SqlDatabase),
+				    Data = Source{[Schema = "gold", Item = "fact_fuel"]}[Data],
+				    Columns = Table.SelectColumns(Data, {"txn_date_key", "branch_key", "truck_key", "gallons", "fuel_cost", "is_on_route_day"})
+				in
+				    Columns

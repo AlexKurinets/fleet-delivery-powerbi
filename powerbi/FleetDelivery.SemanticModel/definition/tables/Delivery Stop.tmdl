@@ -1,0 +1,254 @@
+/// One completed delivery stop. Incremental refresh: three years kept, last ten days refreshed.
+table 'Delivery Stop'
+
+	refreshPolicy
+		policyType: basic
+		rollingWindowGranularity: year
+		rollingWindowPeriods: 3
+		incrementalGranularity: day
+		incrementalPeriods: 10
+		sourceExpression =
+			let
+			    Source = Sql.Database(SqlServer, SqlDatabase),
+			    Data = Source{[Schema = "gold", Item = "fact_delivery_stop"]}[Data],
+			    InRange = Table.SelectRows(Data, each [service_date] >= Date.From(RangeStart) and [service_date] < Date.From(RangeEnd)),
+			    Columns = Table.SelectColumns(InRange, {"service_date_key", "branch_key", "route_key", "customer_key", "driver_key", "truck_key", "stop_sequence", "window_start_minute", "window_end_minute", "arrival_minute", "arrival_source", "minutes_late", "is_on_time", "is_on_time_tms", "is_in_full", "is_otif", "has_geofence", "is_backfilled", "ordered_cases", "short_cases", "refused_cases", "delivered_cases", "dwell_minutes"})
+			in
+			    Columns
+
+	/// Completed delivery stops (quarantined stops excluded)
+	measure Stops = COUNTROWS ( 'Delivery Stop' )
+		formatString: #,0
+		displayFolder: Delivery
+
+	/// Stops whose arrival was at or before the end of the delivery window
+	measure 'On-Time Stops' = SUM ( 'Delivery Stop'[Is On Time] )
+		formatString: #,0
+		displayFolder: Delivery
+
+	/// Stops that arrived after the window closed
+	measure 'Late Stops' = [Stops] - [On-Time Stops]
+		formatString: #,0
+		displayFolder: Delivery
+
+	/// Share of stops that arrived by the end of the window, on the geofence arrival (TMS time only as a flagged fallback)
+	measure 'On-Time %' = DIVIDE ( [On-Time Stops], [Stops] )
+		formatString: 0.0%
+		displayFolder: Delivery
+
+	/// Share of stops with no short or refused cases, as recorded at the stop
+	measure 'In-Full %' = DIVIDE ( SUM ( 'Delivery Stop'[Is In Full] ), [Stops] )
+		formatString: 0.0%
+		displayFolder: Delivery
+
+	/// Share of stops that were both on time and in full
+	measure 'OTIF %' = DIVIDE ( SUM ( 'Delivery Stop'[Is OTIF] ), [Stops] )
+		formatString: 0.0%
+		displayFolder: Delivery
+
+	/// Average minutes past the window end, late stops only
+	measure 'Avg Minutes Late' = CALCULATE ( AVERAGE ( 'Delivery Stop'[Minutes Late] ), 'Delivery Stop'[Minutes Late] > 0 )
+		formatString: #,0
+		displayFolder: Delivery
+
+	/// Cases ordered for the stop
+	measure 'Ordered Cases' = SUM ( 'Delivery Stop'[Ordered Cases] )
+		formatString: #,0
+		displayFolder: Delivery\Cases
+
+	/// Ordered cases less short and refused cases
+	measure 'Delivered Cases' = SUM ( 'Delivery Stop'[Delivered Cases] )
+		formatString: #,0
+		displayFolder: Delivery\Cases
+
+	/// Cases not on the truck
+	measure 'Short Cases' = SUM ( 'Delivery Stop'[Short Cases] )
+		formatString: #,0
+		displayFolder: Delivery\Cases
+
+	/// Cases refused at the door
+	measure 'Refused Cases' = SUM ( 'Delivery Stop'[Refused Cases] )
+		formatString: #,0
+		displayFolder: Delivery\Cases
+
+	/// Delivered cases as a share of ordered cases
+	measure 'Fill Rate %' = DIVIDE ( [Delivered Cases], [Ordered Cases] )
+		formatString: 0.0%
+		displayFolder: Delivery\Cases
+
+	/// Average minutes inside the customer geofence
+	measure 'Avg Dwell Minutes' = AVERAGE ( 'Delivery Stop'[Dwell Minutes] )
+		formatString: #,0.0
+		displayFolder: Delivery
+
+	/// Share of stops scored on a telematics geofence arrival
+	measure 'Geofence Coverage %' = DIVIDE ( SUM ( 'Delivery Stop'[Has Geofence] ), [Stops] )
+		formatString: 0.0%
+		displayFolder: Data Health
+
+	/// Share of geofenced stops whose TMS delivered time was typed in more than 60 minutes after the truck left
+	measure 'Backfilled Entry %' = DIVIDE ( SUM ( 'Delivery Stop'[Is Backfilled] ), SUM ( 'Delivery Stop'[Has Geofence] ) )
+		formatString: 0.0%
+		displayFolder: Data Health
+
+	/// On-time scored on the driver-entered TMS time, kept only to show how far it overstates
+	measure 'On-Time % (TMS Time)' = DIVIDE ( SUM ( 'Delivery Stop'[Is On Time TMS] ), [Stops] )
+		formatString: 0.0%
+		displayFolder: Data Health
+
+	/// Percentage points by which the driver-entered time overstates on-time delivery
+	measure 'TMS On-Time Overstatement' = [On-Time % (TMS Time)] - [On-Time %]
+		formatString: 0.0%
+		displayFolder: Data Health
+
+	column 'Service Date Key'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: service_date_key
+
+	column 'Branch Key'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: branch_key
+
+	column 'Route Key'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: route_key
+
+	column 'Customer Key'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: customer_key
+
+	column 'Driver Key'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: driver_key
+
+	column 'Truck Key'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: truck_key
+
+	column 'Stop Sequence'
+		dataType: int64
+		formatString: 0
+		summarizeBy: none
+		sourceColumn: stop_sequence
+
+	/// Minutes after local midnight
+	column 'Window Start Minute'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: window_start_minute
+
+	/// Minutes after local midnight
+	column 'Window End Minute'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: window_end_minute
+
+	/// Minutes after local midnight, from the arrival source
+	column 'Arrival Minute'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: arrival_minute
+
+	/// Geofence when telematics saw the arrival, TMS when the stop fell back to the driver-entered time
+	column 'Arrival Source'
+		dataType: string
+		summarizeBy: none
+		sourceColumn: arrival_source
+
+	column 'Minutes Late'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: minutes_late
+
+	column 'Is On Time'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: is_on_time
+
+	column 'Is On Time TMS'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: is_on_time_tms
+
+	column 'Is In Full'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: is_in_full
+
+	column 'Is OTIF'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: is_otif
+
+	column 'Has Geofence'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: has_geofence
+
+	column 'Is Backfilled'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: is_backfilled
+
+	column 'Ordered Cases'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: ordered_cases
+
+	column 'Short Cases'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: short_cases
+
+	column 'Refused Cases'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: refused_cases
+
+	column 'Delivered Cases'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: delivered_cases
+
+	column 'Dwell Minutes'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: dwell_minutes
+
+	partition 'Delivery Stop' = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(SqlServer, SqlDatabase),
+				    Data = Source{[Schema = "gold", Item = "fact_delivery_stop"]}[Data],
+				    InRange = Table.SelectRows(Data, each [service_date] >= Date.From(RangeStart) and [service_date] < Date.From(RangeEnd)),
+				    Columns = Table.SelectColumns(InRange, {"service_date_key", "branch_key", "route_key", "customer_key", "driver_key", "truck_key", "stop_sequence", "window_start_minute", "window_end_minute", "arrival_minute", "arrival_source", "minutes_late", "is_on_time", "is_on_time_tms", "is_in_full", "is_otif", "has_geofence", "is_backfilled", "ordered_cases", "short_cases", "refused_cases", "delivered_cases", "dwell_minutes"})
+				in
+				    Columns

@@ -1,0 +1,56 @@
+/// Pipeline runs, their status and whether the model refresh was triggered.
+table 'Pipeline Run'
+
+	/// When the last run that passed every blocking rule finished
+	measure 'Last Successful Load UTC' = CALCULATE ( MAX ( 'Pipeline Run'[Finished UTC] ), 'Pipeline Run'[Status] = "succeeded" )
+		formatString: yyyy-mm-dd hh:nn
+		displayFolder: Data Health
+
+	/// Runs where a blocking data-quality rule stopped the refresh
+	measure 'Runs Blocked' = CALCULATE ( COUNTROWS ( 'Pipeline Run' ), 'Pipeline Run'[Status] = "blocked" )
+		formatString: #,0
+		displayFolder: Data Health
+
+	column 'Run Id'
+		dataType: int64
+		formatString: 0
+		summarizeBy: none
+		sourceColumn: run_id
+
+	column 'Started UTC'
+		dataType: dateTime
+		formatString: yyyy-mm-dd hh:nn
+		summarizeBy: none
+		sourceColumn: started_utc
+
+	column 'Finished UTC'
+		dataType: dateTime
+		formatString: yyyy-mm-dd hh:nn
+		summarizeBy: none
+		sourceColumn: finished_utc
+
+	column 'Source Clock UTC'
+		dataType: dateTime
+		formatString: yyyy-mm-dd hh:nn
+		summarizeBy: none
+		sourceColumn: source_clock_utc
+
+	column Status
+		dataType: string
+		summarizeBy: none
+		sourceColumn: status
+
+	column 'Refresh Status'
+		dataType: string
+		summarizeBy: none
+		sourceColumn: refresh_status
+
+	partition 'Pipeline Run' = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(SqlServer, SqlDatabase),
+				    Data = Source{[Schema = "rpt", Item = "pipeline_run"]}[Data],
+				    Columns = Table.SelectColumns(Data, {"run_id", "started_utc", "finished_utc", "source_clock_utc", "status", "refresh_status"})
+				in
+				    Columns

@@ -1,0 +1,130 @@
+/// One invoice or credit line, at its posting date. Incremental refresh: three years kept, last ten days refreshed.
+table 'Invoice Line'
+
+	refreshPolicy
+		policyType: basic
+		rollingWindowGranularity: year
+		rollingWindowPeriods: 3
+		incrementalGranularity: day
+		incrementalPeriods: 10
+		sourceExpression =
+			let
+			    Source = Sql.Database(SqlServer, SqlDatabase),
+			    Data = Source{[Schema = "gold", Item = "fact_invoice_line"]}[Data],
+			    InRange = Table.SelectRows(Data, each [posting_date] >= Date.From(RangeStart) and [posting_date] < Date.From(RangeEnd)),
+			    Columns = Table.SelectColumns(InRange, {"posting_date_key", "branch_key", "customer_key", "category_key", "route_key", "order_type", "is_credit", "cases", "revenue", "cost"})
+			in
+			    Columns
+
+	/// Invoiced revenue net of credits, by posting date
+	measure Revenue = SUM ( 'Invoice Line'[Revenue] )
+		formatString: "$"#,0;("$"#,0);"$"#,0
+		displayFolder: Revenue
+
+	/// Cost of goods on the invoice lines, net of credits
+	measure Cost = SUM ( 'Invoice Line'[Cost] )
+		formatString: "$"#,0;("$"#,0);"$"#,0
+		displayFolder: Revenue
+
+	/// Revenue less cost of goods
+	measure 'Gross Margin' = [Revenue] - [Cost]
+		formatString: "$"#,0;("$"#,0);"$"#,0
+		displayFolder: Revenue
+
+	/// Gross margin as a share of revenue
+	measure 'Gross Margin %' = DIVIDE ( [Gross Margin], [Revenue] )
+		formatString: 0.0%
+		displayFolder: Revenue
+
+	/// Credit memo lines for short and refused cases (negative)
+	measure Credits = CALCULATE ( SUM ( 'Invoice Line'[Revenue] ), 'Invoice Line'[Is Credit] = 1 )
+		formatString: "$"#,0;("$"#,0);"$"#,0
+		displayFolder: Revenue
+
+	/// Credits as a share of gross invoiced revenue
+	measure 'Credit %' = DIVIDE ( -[Credits], CALCULATE ( SUM ( 'Invoice Line'[Revenue] ), 'Invoice Line'[Is Credit] = 0 ) )
+		formatString: 0.0%
+		displayFolder: Revenue
+
+	/// Cases on invoice lines, net of credits
+	measure 'Cases Invoiced' = SUM ( 'Invoice Line'[Cases] )
+		formatString: #,0
+		displayFolder: Revenue
+
+	/// Revenue divided by completed stops over the shared dimensions
+	measure 'Revenue per Stop' = DIVIDE ( [Revenue], [Stops] )
+		formatString: "$"#,0;("$"#,0);"$"#,0
+		displayFolder: Revenue
+
+	column 'Posting Date Key'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: posting_date_key
+
+	column 'Branch Key'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: branch_key
+
+	column 'Customer Key'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: customer_key
+
+	column 'Category Key'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: category_key
+
+	column 'Route Key'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: route_key
+
+	/// delivery, or pickup for will-call orders with no stop
+	column 'Order Type'
+		dataType: string
+		summarizeBy: none
+		sourceColumn: order_type
+
+	column 'Is Credit'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: is_credit
+
+	column Cases
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: cases
+
+	column Revenue
+		dataType: decimal
+		isHidden
+		formatString: "$"#,0;("$"#,0);"$"#,0
+		summarizeBy: none
+		sourceColumn: revenue
+
+	column Cost
+		dataType: decimal
+		isHidden
+		formatString: "$"#,0;("$"#,0);"$"#,0
+		summarizeBy: none
+		sourceColumn: cost
+
+	partition 'Invoice Line' = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(SqlServer, SqlDatabase),
+				    Data = Source{[Schema = "gold", Item = "fact_invoice_line"]}[Data],
+				    InRange = Table.SelectRows(Data, each [posting_date] >= Date.From(RangeStart) and [posting_date] < Date.From(RangeEnd)),
+				    Columns = Table.SelectColumns(InRange, {"posting_date_key", "branch_key", "customer_key", "category_key", "route_key", "order_type", "is_credit", "cases", "revenue", "cost"})
+				in
+				    Columns

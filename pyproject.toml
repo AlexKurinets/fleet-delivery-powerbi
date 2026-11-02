@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fleetbi"
+version = "1.0.0"
+description = "Incremental ingestion, a T-SQL star schema and a Power BI semantic model for delivery and fleet cost analytics (synthetic data)"
+authors = [{ name = "Alex Kurinets" }]
+license = { text = "MIT" }
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi==0.115.6",
+    "uvicorn==0.34.0",
+    "httpx==0.28.1",
+    "pymssql==2.3.2",
+    "tzdata==2025.2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest==8.3.4", "jsonschema==4.23.0"]
+
+[project.scripts]
+fleetbi = "fleetbi.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["db: needs SQL Server (FLEETBI_TEST_SQL_PORT)", "model: needs build/model.bim from tools/TmdlCheck"]

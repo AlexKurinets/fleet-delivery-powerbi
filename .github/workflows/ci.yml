@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: Model checks and tests
+    runs-on: ubuntu-latest
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_PID: Developer
+          MSSQL_SA_PASSWORD: Fleet_Dev_2026!
+        ports:
+          - 14331:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P Fleet_Dev_2026! -Q 'SELECT 1' -b"
+          --health-interval 10s --health-timeout 10s --health-retries 30 --health-start-period 20s
+    env:
+      FLEETBI_TEST_SQL_PORT: "14331"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]"
+      - name: Compile the TMDL with Microsoft's Tabular Object Model
+        run: dotnet run -c Release --project tools/TmdlCheck -- powerbi/FleetDelivery.SemanticModel/definition build/model.bim
+      - name: Best-practice rules
+        run: fleetbi model bpa
+      - name: Data dictionary is current
+        run: |
+          fleetbi model docs --out build/data-dictionary.md
+          diff -u docs/data-dictionary.md build/data-dictionary.md
+      - name: Tests
+        run: pytest -q
+
+  compose:
+    name: Compose stack smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/smoke.sh
+      - if: failure()
+        run: docker compose logs --tail 200
+      - if: always()
+        run: docker compose down -v

@@ -1,0 +1,13 @@
+.venv/
+.git/
+.github/
+.state/
+.state-dev/
+build/
+tools/TmdlCheck/bin/
+tools/TmdlCheck/obj/
+powerbi/
+docs/
+**/__pycache__/
+.pytest_cache/
+.env

@@ -1,0 +1,33 @@
+/// Driver.
+table Driver
+
+	column 'Driver Key'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: driver_key
+
+	column 'Driver Code'
+		dataType: string
+		summarizeBy: none
+		sourceColumn: driver_code
+
+	column Driver
+		dataType: string
+		summarizeBy: none
+		sourceColumn: driver_name
+
+	column 'Home Branch'
+		dataType: string
+		summarizeBy: none
+		sourceColumn: home_branch
+
+	partition Driver = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(SqlServer, SqlDatabase),
+				    Data = Source{[Schema = "gold", Item = "dim_driver"]}[Data],
+				    Columns = Table.SelectColumns(Data, {"driver_key", "driver_code", "driver_name", "home_branch"})
+				in
+				    Columns

@@ -1,0 +1,38 @@
+/// Delivering branch. Row-level security filters this table.
+table Branch
+
+	column 'Branch Key'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: branch_key
+
+	column 'Branch Code'
+		dataType: string
+		summarizeBy: none
+		sourceColumn: branch_code
+
+	column Branch
+		dataType: string
+		summarizeBy: none
+		sourceColumn: branch_name
+
+	column Region
+		dataType: string
+		summarizeBy: none
+		sourceColumn: region
+
+	column 'Time Zone'
+		dataType: string
+		summarizeBy: none
+		sourceColumn: time_zone
+
+	partition Branch = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(SqlServer, SqlDatabase),
+				    Data = Source{[Schema = "gold", Item = "dim_branch"]}[Data],
+				    Columns = Table.SelectColumns(Data, {"branch_key", "branch_code", "branch_name", "region", "time_zone"})
+				in
+				    Columns

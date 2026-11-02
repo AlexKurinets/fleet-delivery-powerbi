@@ -1,0 +1,161 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.13.0/schema.json",
+  "name": "fleet_table_trucks",
+  "position": {
+    "x": 16,
+    "y": 416,
+    "z": 6000,
+    "height": 288,
+    "width": 1248,
+    "tabOrder": 6000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Truck"
+                    }
+                  },
+                  "Property": "Truck"
+                }
+              },
+              "queryRef": "Truck.Truck",
+              "nativeQueryRef": "Truck"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Truck"
+                    }
+                  },
+                  "Property": "Home Branch"
+                }
+              },
+              "queryRef": "Truck.Home Branch",
+              "nativeQueryRef": "Home Branch"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Route Trip"
+                    }
+                  },
+                  "Property": "Route Days"
+                }
+              },
+              "queryRef": "Route Trip.Route Days",
+              "nativeQueryRef": "Route Days"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Route Trip"
+                    }
+                  },
+                  "Property": "Driven Miles"
+                }
+              },
+              "queryRef": "Route Trip.Driven Miles",
+              "nativeQueryRef": "Driven Miles"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Fuel"
+                    }
+                  },
+                  "Property": "MPG"
+                }
+              },
+              "queryRef": "Fuel.MPG",
+              "nativeQueryRef": "MPG"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Route Trip"
+                    }
+                  },
+                  "Property": "Fleet Cost"
+                }
+              },
+              "queryRef": "Route Trip.Fleet Cost",
+              "nativeQueryRef": "Fleet Cost"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Route Trip"
+                    }
+                  },
+                  "Property": "Cost per Mile"
+                }
+              },
+              "queryRef": "Route Trip.Cost per Mile",
+              "nativeQueryRef": "Cost per Mile"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Route Trip"
+                  }
+                },
+                "Property": "Cost per Mile"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Truck cost detail'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

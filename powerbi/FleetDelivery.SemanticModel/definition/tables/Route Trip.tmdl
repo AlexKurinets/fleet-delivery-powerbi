@@ -1,0 +1,129 @@
+/// One truck on one route and day, with telematics miles and driver hours.
+table 'Route Trip'
+
+	/// Routes run, one per route and day
+	measure 'Route Days' = COUNTROWS ( 'Route Trip' )
+		formatString: #,0
+		displayFolder: Fleet
+
+	/// Miles from the telematics trip
+	measure 'Driven Miles' = SUM ( 'Route Trip'[Driven Miles] )
+		formatString: #,0
+		displayFolder: Fleet
+
+	/// Miles on the TMS route plan
+	measure 'Planned Miles' = SUM ( 'Route Trip'[Planned Miles] )
+		formatString: #,0
+		displayFolder: Fleet
+
+	/// Driven miles above plan, as a share of planned miles
+	measure 'Mile Variance %' = DIVIDE ( [Driven Miles] - [Planned Miles], [Planned Miles] )
+		formatString: 0.0%
+		displayFolder: Fleet
+
+	/// Dispatch to return plus 30 minutes of inspections
+	measure 'Driver Hours' = SUM ( 'Route Trip'[Driver Hours] )
+		formatString: #,0
+		displayFolder: Fleet
+
+	/// Driver hours at each driver's hourly rate
+	measure 'Labor Cost' = SUM ( 'Route Trip'[Labor Cost] )
+		formatString: "$"#,0;("$"#,0);"$"#,0
+		displayFolder: Fleet
+
+	/// Driver labor plus fuel
+	measure 'Fleet Cost' = [Labor Cost] + [Fuel Cost]
+		formatString: "$"#,0;("$"#,0);"$"#,0
+		displayFolder: Fleet
+
+	/// Fleet cost per completed stop
+	measure 'Cost per Stop' = DIVIDE ( [Fleet Cost], [Stops] )
+		formatString: "$"#,0.00;("$"#,0.00);"$"#,0.00
+		displayFolder: Fleet
+
+	/// Fleet cost per delivered case
+	measure 'Cost per Case' = DIVIDE ( [Fleet Cost], [Delivered Cases] )
+		formatString: "$"#,0.00;("$"#,0.00);"$"#,0.00
+		displayFolder: Fleet
+
+	/// Fleet cost per driven mile
+	measure 'Cost per Mile' = DIVIDE ( [Fleet Cost], [Driven Miles] )
+		formatString: "$"#,0.00;("$"#,0.00);"$"#,0.00
+		displayFolder: Fleet
+
+	column 'Service Date Key'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: service_date_key
+
+	column 'Branch Key'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: branch_key
+
+	column 'Route Key'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: route_key
+
+	column 'Truck Key'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: truck_key
+
+	column 'Driver Key'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: driver_key
+
+	column 'Planned Stops'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: planned_stops
+
+	column 'Completed Stops'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: completed_stops
+
+	column 'Planned Miles'
+		dataType: double
+		isHidden
+		summarizeBy: none
+		sourceColumn: planned_miles
+
+	column 'Driven Miles'
+		dataType: double
+		isHidden
+		summarizeBy: none
+		sourceColumn: driven_miles
+
+	column 'Driver Hours'
+		dataType: double
+		isHidden
+		summarizeBy: none
+		sourceColumn: driver_hours
+
+	column 'Labor Cost'
+		dataType: decimal
+		isHidden
+		formatString: "$"#,0;("$"#,0);"$"#,0
+		summarizeBy: none
+		sourceColumn: labor_cost
+
+	partition 'Route Trip' = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(SqlServer, SqlDatabase),
+				    Data = Source{[Schema = "gold", Item = "fact_route_trip"]}[Data],
+				    Columns = Table.SelectColumns(Data, {"service_date_key", "branch_key", "route_key", "truck_key", "driver_key", "planned_stops", "completed_stops", "planned_miles", "driven_miles", "driver_hours", "labor_cost"})
+				in
+				    Columns

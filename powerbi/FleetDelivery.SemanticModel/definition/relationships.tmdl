@@ -1,0 +1,83 @@
+relationship delivery_stop__service_date_key
+	fromColumn: 'Delivery Stop'.'Service Date Key'
+	toColumn: Date.'Date Key'
+
+relationship delivery_stop__branch_key
+	fromColumn: 'Delivery Stop'.'Branch Key'
+	toColumn: Branch.'Branch Key'
+
+relationship delivery_stop__route_key
+	fromColumn: 'Delivery Stop'.'Route Key'
+	toColumn: Route.'Route Key'
+
+relationship delivery_stop__customer_key
+	fromColumn: 'Delivery Stop'.'Customer Key'
+	toColumn: Customer.'Customer Key'
+
+relationship delivery_stop__driver_key
+	fromColumn: 'Delivery Stop'.'Driver Key'
+	toColumn: Driver.'Driver Key'
+
+relationship delivery_stop__truck_key
+	fromColumn: 'Delivery Stop'.'Truck Key'
+	toColumn: Truck.'Truck Key'
+
+relationship invoice_line__posting_date_key
+	fromColumn: 'Invoice Line'.'Posting Date Key'
+	toColumn: Date.'Date Key'
+
+relationship invoice_line__branch_key
+	fromColumn: 'Invoice Line'.'Branch Key'
+	toColumn: Branch.'Branch Key'
+
+relationship invoice_line__customer_key
+	fromColumn: 'Invoice Line'.'Customer Key'
+	toColumn: Customer.'Customer Key'
+
+relationship invoice_line__category_key
+	fromColumn: 'Invoice Line'.'Category Key'
+	toColumn: 'Product Category'.'Category Key'
+
+relationship invoice_line__route_key
+	fromColumn: 'Invoice Line'.'Route Key'
+	toColumn: Route.'Route Key'
+
+relationship route_trip__service_date_key
+	fromColumn: 'Route Trip'.'Service Date Key'
+	toColumn: Date.'Date Key'
+
+relationship route_trip__branch_key
+	fromColumn: 'Route Trip'.'Branch Key'
+	toColumn: Branch.'Branch Key'
+
+relationship route_trip__route_key
+	fromColumn: 'Route Trip'.'Route Key'
+	toColumn: Route.'Route Key'
+
+relationship route_trip__truck_key
+	fromColumn: 'Route Trip'.'Truck Key'
+	toColumn: Truck.'Truck Key'
+
+relationship route_trip__driver_key
+	fromColumn: 'Route Trip'.'Driver Key'
+	toColumn: Driver.'Driver Key'
+
+relationship fuel__txn_date_key
+	fromColumn: Fuel.'Txn Date Key'
+	toColumn: Date.'Date Key'
+
+relationship fuel__branch_key
+	fromColumn: Fuel.'Branch Key'
+	toColumn: Branch.'Branch Key'
+
+relationship fuel__truck_key
+	fromColumn: Fuel.'Truck Key'
+	toColumn: Truck.'Truck Key'
+
+relationship data_quality__check_date_key
+	fromColumn: 'Data Quality'.'Check Date Key'
+	toColumn: Date.'Date Key'
+
+relationship data_quality__branch_key
+	fromColumn: 'Data Quality'.'Branch Key'
+	toColumn: Branch.'Branch Key'

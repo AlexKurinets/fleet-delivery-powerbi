@@ -1,0 +1,85 @@
+/// Calendar from 2024 to 2027, marked as the model's date table. Facts relate on Date Key.
+table Date
+	dataCategory: Time
+
+	column 'Date Key'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: date_key
+
+	column Date
+		dataType: dateTime
+		isKey
+		formatString: yyyy-mm-dd
+		summarizeBy: none
+		sourceColumn: date
+
+	column Year
+		dataType: int64
+		formatString: 0
+		summarizeBy: none
+		sourceColumn: year
+
+	column Quarter
+		dataType: string
+		summarizeBy: none
+		sourceColumn: quarter_label
+
+	column 'Month Number'
+		dataType: int64
+		isHidden
+		formatString: 0
+		summarizeBy: none
+		sourceColumn: month_number
+
+	column Month
+		dataType: string
+		summarizeBy: none
+		sourceColumn: month_name
+		sortByColumn: 'Month Number'
+
+	column 'Month Start'
+		dataType: dateTime
+		formatString: mmm yyyy
+		summarizeBy: none
+		sourceColumn: month_start
+
+	column 'Year Month'
+		dataType: string
+		summarizeBy: none
+		sourceColumn: year_month
+
+	column 'ISO Week'
+		dataType: int64
+		formatString: 0
+		summarizeBy: none
+		sourceColumn: iso_week
+
+	column 'Weekday Number'
+		dataType: int64
+		isHidden
+		formatString: 0
+		summarizeBy: none
+		sourceColumn: weekday_number
+
+	column Weekday
+		dataType: string
+		summarizeBy: none
+		sourceColumn: weekday_name
+		sortByColumn: 'Weekday Number'
+
+	column 'Is Operating Day'
+		dataType: boolean
+		summarizeBy: none
+		sourceColumn: is_operating_day
+
+	partition Date = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(SqlServer, SqlDatabase),
+				    Data = Source{[Schema = "gold", Item = "dim_date"]}[Data],
+				    Columns = Table.SelectColumns(Data, {"date_key", "date", "year", "quarter_label", "month_number", "month_name", "month_start", "year_month", "iso_week", "weekday_number", "weekday_name", "is_operating_day"})
+				in
+				    Columns

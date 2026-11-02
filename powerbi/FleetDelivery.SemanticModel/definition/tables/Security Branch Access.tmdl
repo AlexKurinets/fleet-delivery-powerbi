@@ -1,0 +1,23 @@
+/// User to branch mapping for the Branch Manager role, maintained by IT.
+table 'Security Branch Access'
+	isHidden
+
+	column 'User Principal Name'
+		dataType: string
+		summarizeBy: none
+		sourceColumn: user_principal_name
+
+	column 'Branch Key'
+		dataType: int64
+		summarizeBy: none
+		sourceColumn: branch_key
+
+	partition 'Security Branch Access' = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(SqlServer, SqlDatabase),
+				    Data = Source{[Schema = "sec", Item = "user_branch_access"]}[Data],
+				    Columns = Table.SelectColumns(Data, {"user_principal_name", "branch_key"})
+				in
+				    Columns

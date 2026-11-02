@@ -1,0 +1,56 @@
+/// Customer, Type 2 on branch assignment: one row per customer and branch period.
+table Customer
+
+	column 'Customer Key'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: customer_key
+
+	column 'Customer Number'
+		dataType: string
+		summarizeBy: none
+		sourceColumn: customer_number
+
+	column Customer
+		dataType: string
+		summarizeBy: none
+		sourceColumn: customer_name
+
+	column Segment
+		dataType: string
+		summarizeBy: none
+		sourceColumn: segment
+
+	/// Branch that served the customer in this version's period
+	column 'Customer Branch'
+		dataType: string
+		summarizeBy: none
+		sourceColumn: customer_branch
+
+	column 'Valid From'
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		summarizeBy: none
+		sourceColumn: valid_from
+
+	column 'Valid To'
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		summarizeBy: none
+		sourceColumn: valid_to
+
+	column 'Is Current'
+		dataType: boolean
+		summarizeBy: none
+		sourceColumn: is_current
+
+	partition Customer = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(SqlServer, SqlDatabase),
+				    Data = Source{[Schema = "gold", Item = "dim_customer"]}[Data],
+				    Columns = Table.SelectColumns(Data, {"customer_key", "customer_number", "customer_name", "segment", "customer_branch", "valid_from", "valid_to", "is_current"})
+				in
+				    Columns

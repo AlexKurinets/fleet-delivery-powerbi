@@ -1,0 +1,33 @@
+/// Product category and its temperature zone.
+table 'Product Category'
+
+	column 'Category Key'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: category_key
+
+	column 'Category Code'
+		dataType: string
+		summarizeBy: none
+		sourceColumn: category_code
+
+	column Category
+		dataType: string
+		summarizeBy: none
+		sourceColumn: category_name
+
+	column 'Temperature Zone'
+		dataType: string
+		summarizeBy: none
+		sourceColumn: temp_zone
+
+	partition 'Product Category' = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(SqlServer, SqlDatabase),
+				    Data = Source{[Schema = "gold", Item = "dim_category"]}[Data],
+				    Columns = Table.SelectColumns(Data, {"category_key", "category_code", "category_name", "temp_zone"})
+				in
+				    Columns

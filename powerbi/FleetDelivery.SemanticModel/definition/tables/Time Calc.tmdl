@@ -1,0 +1,38 @@
+/// Time intelligence applied to any measure: current, month to date, year to date, prior year, year over year.
+table 'Time Calc'
+
+	calculationGroup
+		precedence: 10
+
+		calculationItem Current = SELECTEDMEASURE ()
+			ordinal: 0
+
+		calculationItem MTD = CALCULATE ( SELECTEDMEASURE (), DATESMTD ( 'Date'[Date] ) )
+			ordinal: 1
+
+		calculationItem YTD = CALCULATE ( SELECTEDMEASURE (), DATESYTD ( 'Date'[Date] ) )
+			ordinal: 2
+
+		calculationItem PY = CALCULATE ( SELECTEDMEASURE (), SAMEPERIODLASTYEAR ( 'Date'[Date] ) )
+			ordinal: 3
+
+		calculationItem 'YoY Change' =
+				VAR CurrentValue = SELECTEDMEASURE ()
+				VAR PriorValue = CALCULATE ( SELECTEDMEASURE (), SAMEPERIODLASTYEAR ( 'Date'[Date] ) )
+				RETURN
+				    IF ( NOT ISBLANK ( CurrentValue ) && NOT ISBLANK ( PriorValue ), CurrentValue - PriorValue )
+			ordinal: 4
+
+	column 'Time Calc'
+		dataType: string
+		summarizeBy: none
+		sourceColumn: Name
+		sortByColumn: Ordinal
+
+	column Ordinal
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: Ordinal
+
+	partition 'Time Calc' = calculationGroup

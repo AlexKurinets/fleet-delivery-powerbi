@@ -1,0 +1,39 @@
+/// Refrigerated truck.
+table Truck
+
+	column 'Truck Key'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: truck_key
+
+	column Truck
+		dataType: string
+		summarizeBy: none
+		sourceColumn: truck_code
+
+	column 'Home Branch'
+		dataType: string
+		summarizeBy: none
+		sourceColumn: home_branch
+
+	column 'Model Year'
+		dataType: int64
+		formatString: 0
+		summarizeBy: none
+		sourceColumn: model_year
+
+	column 'Reefer Type'
+		dataType: string
+		summarizeBy: none
+		sourceColumn: reefer_type
+
+	partition Truck = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(SqlServer, SqlDatabase),
+				    Data = Source{[Schema = "gold", Item = "dim_truck"]}[Data],
+				    Columns = Table.SelectColumns(Data, {"truck_key", "truck_code", "home_branch", "model_year", "reefer_type"})
+				in
+				    Columns

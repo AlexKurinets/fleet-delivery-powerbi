@@ -1,0 +1,90 @@
+/// Latest result of each data-quality rule per branch and day (and per API source for freshness).
+table 'Data Quality'
+
+	/// Branch-days (or sources) where a rule exceeded its threshold
+	measure 'Rule Breaches' = CALCULATE ( COUNTROWS ( 'Data Quality' ), 'Data Quality'[Breached] = 1 )
+		formatString: #,0
+		displayFolder: Data Health
+
+	/// Failed rows as a share of checked rows; trailing-window rules are averaged over the selected days
+	measure 'Rule Failed %' = DIVIDE ( SUM ( 'Data Quality'[Failed Rows] ), SUM ( 'Data Quality'[Checked Rows] ) )
+		formatString: 0.0%
+		displayFolder: Data Health
+
+	/// Highest measured share on any selected branch-day
+	measure 'Worst Day %' = MAX ( 'Data Quality'[Measured Value] )
+		formatString: 0.0%
+		displayFolder: Data Health
+
+	column 'Rule Code'
+		dataType: string
+		summarizeBy: none
+		sourceColumn: rule_code
+
+	column Rule
+		dataType: string
+		summarizeBy: none
+		sourceColumn: description
+
+	column Severity
+		dataType: string
+		summarizeBy: none
+		sourceColumn: severity
+
+	/// API source for the freshness rule, blank for branch rules
+	column Subject
+		dataType: string
+		summarizeBy: none
+		sourceColumn: subject
+
+	column 'Branch Key'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: branch_key
+
+	column 'Check Date Key'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: check_date_key
+
+	column 'Checked Rows'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: checked_rows
+
+	column 'Failed Rows'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: failed_rows
+
+	column 'Measured Value'
+		dataType: double
+		isHidden
+		summarizeBy: none
+		sourceColumn: measured_value
+
+	column Threshold
+		dataType: double
+		isHidden
+		summarizeBy: none
+		sourceColumn: threshold
+
+	column Breached
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: breached
+
+	partition 'Data Quality' = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(SqlServer, SqlDatabase),
+				    Data = Source{[Schema = "rpt", Item = "dq_result"]}[Data],
+				    Columns = Table.SelectColumns(Data, {"rule_code", "description", "severity", "subject", "branch_key", "check_date_key", "checked_rows", "failed_rows", "measured_value", "threshold", "breached"})
+				in
+				    Columns

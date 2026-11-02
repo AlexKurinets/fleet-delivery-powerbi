@@ -1,0 +1,8 @@
+/// Sees the branches mapped to the signed-in user in the security table. The filter looks the user up
+/// directly, so no relationship has to filter in both directions.
+role 'Branch Manager'
+	modelPermission: read
+
+	tablePermission Branch = [Branch Key] IN CALCULATETABLE ( VALUES ( 'Security Branch Access'[Branch Key] ), 'Security Branch Access'[User Principal Name] = USERPRINCIPALNAME () )
+
+	tablePermission 'Security Branch Access' = 'Security Branch Access'[User Principal Name] = USERPRINCIPALNAME ()

@@ -1,0 +1,3 @@
+/// Executives and finance: every branch.
+role 'All Branches'
+	modelPermission: read

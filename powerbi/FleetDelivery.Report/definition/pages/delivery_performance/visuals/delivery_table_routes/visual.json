@@ -1,0 +1,147 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.13.0/schema.json",
+  "name": "delivery_table_routes",
+  "position": {
+    "x": 16,
+    "y": 416,
+    "z": 8000,
+    "height": 288,
+    "width": 1248,
+    "tabOrder": 8000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Route"
+                    }
+                  },
+                  "Property": "Route"
+                }
+              },
+              "queryRef": "Route.Route",
+              "nativeQueryRef": "Route"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Route"
+                    }
+                  },
+                  "Property": "Route Branch"
+                }
+              },
+              "queryRef": "Route.Route Branch",
+              "nativeQueryRef": "Route Branch"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Delivery Stop"
+                    }
+                  },
+                  "Property": "Stops"
+                }
+              },
+              "queryRef": "Delivery Stop.Stops",
+              "nativeQueryRef": "Stops"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Delivery Stop"
+                    }
+                  },
+                  "Property": "On-Time %"
+                }
+              },
+              "queryRef": "Delivery Stop.On-Time %",
+              "nativeQueryRef": "On-Time %"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Delivery Stop"
+                    }
+                  },
+                  "Property": "Avg Minutes Late"
+                }
+              },
+              "queryRef": "Delivery Stop.Avg Minutes Late",
+              "nativeQueryRef": "Avg Minutes Late"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Delivery Stop"
+                    }
+                  },
+                  "Property": "Short Cases"
+                }
+              },
+              "queryRef": "Delivery Stop.Short Cases",
+              "nativeQueryRef": "Short Cases"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Delivery Stop"
+                  }
+                },
+                "Property": "On-Time %"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Route performance'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

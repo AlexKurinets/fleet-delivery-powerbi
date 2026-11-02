@@ -1,0 +1,69 @@
+name: fleetbi
+
+x-app-env: &app-env
+  FLEETBI_SQL_HOST: sqlserver
+  FLEETBI_SQL_PORT: "1433"
+  FLEETBI_SQL_PASSWORD: ${FLEETBI_SQL_PASSWORD:-Fleet_Dev_2026!}
+  FLEETBI_SOURCES_URL: http://sources:8000
+  FLEETBI_STATE_DIR: /data
+  FLEETBI_SFTP_DIR: /data/sftp
+
+services:
+  # Stands in for the Fabric Warehouse (and, in a second database, the on-prem ERP).
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${FLEETBI_SQL_PASSWORD:-Fleet_Dev_2026!}
+    ports:
+      - "${SQL_PORT:-14330}:1433"
+    volumes:
+      - sqldata:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -Q 'SELECT 1' -b -o /dev/null"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 20s
+
+  # Mock TMS and telematics REST APIs over the synthetic world.
+  sources:
+    build: .
+    command: ["fleetbi", "serve-sources", "--port", "8000"]
+    environment:
+      <<: *app-env
+      FLEETBI_RATE_LIMIT_EVERY: "40"
+    ports:
+      - "${SOURCES_PORT:-8230}:8000"
+    volumes:
+      - state:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Creates the databases, seeds the ERP and fuel files, then runs the pipeline every two hours.
+  pipeline:
+    build: .
+    command: ["sh", "-c", "fleetbi init && fleetbi seed && fleetbi run --loop --interval ${PIPELINE_INTERVAL:-7200}"]
+    environment: *app-env
+    volumes:
+      - state:/data
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      sources:
+        condition: service_healthy
+    healthcheck:
+      # Healthy once the first run has passed every blocking rule.
+      test: ["CMD", "python", "-c", "from fleetbi import config, db; c = db.connect(config.load(), retries=1); assert db.scalar(c, \"SELECT COUNT(*) FROM meta.run WHERE status = 'succeeded'\")"]
+      interval: 15s
+      timeout: 15s
+      retries: 80
+      start_period: 60s
+
+volumes:
+  sqldata:
+  state:

@@ -1,0 +1,33 @@
+/// Delivery route. Not related to Branch, so there is one filter path from Branch to each fact.
+table Route
+
+	column 'Route Key'
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: route_key
+
+	column 'Route Code'
+		dataType: string
+		summarizeBy: none
+		sourceColumn: route_code
+
+	column Route
+		dataType: string
+		summarizeBy: none
+		sourceColumn: route_name
+
+	column 'Route Branch'
+		dataType: string
+		summarizeBy: none
+		sourceColumn: route_branch
+
+	partition Route = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(SqlServer, SqlDatabase),
+				    Data = Source{[Schema = "gold", Item = "dim_route"]}[Data],
+				    Columns = Table.SelectColumns(Data, {"route_key", "route_code", "route_name", "route_branch"})
+				in
+				    Columns

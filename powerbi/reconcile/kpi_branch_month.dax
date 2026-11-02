@@ -1,0 +1,18 @@
+// Headline KPIs by branch and month from the semantic model.
+// Run it in Power BI Desktop's DAX query view (or DAX Studio) after a refresh; every row should match
+// powerbi/reconcile/kpi_branch_month.sql, which reads rpt.kpi_branch_month in the warehouse.
+EVALUATE
+SUMMARIZECOLUMNS (
+    Branch[Branch Code],
+    'Date'[Year Month],
+    "stops", [Stops],
+    "on_time_pct", [On-Time %],
+    "on_time_tms_pct", [On-Time % (TMS Time)],
+    "in_full_pct", [In-Full %],
+    "otif_pct", [OTIF %],
+    "revenue", [Revenue],
+    "gross_margin_pct", [Gross Margin %],
+    "fleet_cost", [Fleet Cost],
+    "cost_per_case", [Cost per Case]
+)
+ORDER BY Branch[Branch Code], 'Date'[Year Month]
